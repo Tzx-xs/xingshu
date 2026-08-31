@@ -1,0 +1,26 @@
+novel:
+  id: demo_novel
+  title: 星枢试作
+  genre: 玄幻
+  language: zh
+creation:
+  total_volumes: 1
+  total_chapters: 3
+  chapter_word_target: 500
+quality:
+  audit_threshold: 75
+  revision_max_attempts: 3
+progress:
+  current_volume: 1
+  current_arc: 1
+  current_chapter: 0
+  engine_state: idle
+budget:
+  gen_tokens_per_chapter: 8000
+  audit_tokens_per_chapter: 6000
+  pipeline_ab_tokens_per_chapter: 4000
+  context_slice_budget: 12000
+llm:
+  model: "mock"
+  audit_model: "mock"
+  temperature: 0.8

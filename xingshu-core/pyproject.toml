@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xingshu"
+version = "0.1.0"
+description = "星枢渐进式叙事引擎 - 初版骨架实现（对应 xingshu-engine 设计文档）"
+readme = "README.md"
+requires-python = ">=3.14"
+license = {text = "MIT"}
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
