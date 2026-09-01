@@ -38,6 +38,13 @@ uv pip install --python .venv -e ".[dev]"
 
 # 端到端骨架演示
 .venv/bin/python scripts/demo.py
+
+# 一键启动写作台（浏览器自动打开 http://127.0.0.1:8899）
+./start.sh
+# 指定端口 / 指定小说目录 / 只起服务不弹浏览器
+./start.sh --port 9000
+./start.sh <小说目录> --port 9000
+./start.sh --no-browser
 ```
 
 ## 已实现（初版核心，严格 TDD）

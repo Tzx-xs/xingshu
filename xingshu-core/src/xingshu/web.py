@@ -277,10 +277,28 @@ class NovelHandler(BaseHTTPRequestHandler):
         pass
 
 
+def create_server(
+    novel_dir: str | Path,
+    meta: NovelMeta,
+    *,
+    host: str = "127.0.0.1",
+    port: int = 8899,
+) -> ThreadingHTTPServer:
+    """创建写作台服务器（不阻塞，serve_forever 由调用方决定）。"""
+    httpd = ThreadingHTTPServer((host, port), NovelHandler)
+    httpd.engine = EngineServer(novel_dir=novel_dir, meta=meta)
+    return httpd
+
+
+def serve_url(httpd: ThreadingHTTPServer) -> str:
+    """httpd 可直接由浏览器打开的本机地址。"""
+    host, port = httpd.server_address[:2]
+    return f"http://{host}:{port}"
+
+
 def run_server(novel_dir: str | Path, meta: NovelMeta, *, port: int = 8899) -> ThreadingHTTPServer:
     """启动写作台（阻塞）。浏览器打开 http://127.0.0.1:{port}。"""
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), NovelHandler)
-    httpd.engine = EngineServer(novel_dir=novel_dir, meta=meta)
-    print(f"星枢写作台已启动: http://127.0.0.1:{port}")
+    httpd = create_server(novel_dir, meta, port=port)
+    print(f"星枢写作台已启动: {serve_url(httpd)}")
     httpd.serve_forever()
     return httpd
