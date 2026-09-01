@@ -50,6 +50,7 @@ class NovelMeta:
     context_slice_budget: int = 12000
     model: str = ""
     audit_model: str = ""
+    base_url: str = ""
     temperature: float = 0.8
 
 
@@ -98,6 +99,7 @@ def parse_novel_meta(data: dict[str, Any]) -> NovelMeta:
         context_slice_budget=_int(budget.get("context_slice_budget", 12000)),
         model=str(llm.get("model", "")),
         audit_model=str(llm.get("audit_model", "")),
+        base_url=str(llm.get("base_url", "")),
         temperature=_float(llm.get("temperature", 0.8)),
     )
 

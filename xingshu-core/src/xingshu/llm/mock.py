@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 class MockLLM:
     response: str = ""
     calls: list[str] = field(default_factory=list)
+    model: str = ""
 
     def complete(
         self,

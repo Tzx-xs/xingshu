@@ -27,6 +27,12 @@ def test_mock_llm_records_and_returns() -> None:
     assert m.calls == ["prompt"]
 
 
+def test_mock_llm_carries_model() -> None:
+    """MockLLM 与云端实现对齐：同样暴露 model 字段，便于上层统一显示/路由。"""
+    m = MockLLM(response="x", model="mock-model")
+    assert m.model == "mock-model"
+
+
 def test_plan_returns_chapter_plan() -> None:
     orch = _orch()
     plan = orch.plan(3, chapter_type="战斗", pov="林远")
