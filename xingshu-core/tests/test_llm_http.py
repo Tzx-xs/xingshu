@@ -115,12 +115,13 @@ def test_from_meta_reads_api_key_from_env(monkeypatch) -> None:
 
 
 def test_from_meta_reads_agnes_api_key(monkeypatch) -> None:
+    # Agnes 仅作为"某个 OpenAI 兼容厂商"的接入样本，非引擎内置模型
     monkeypatch.setenv("AGNES_API_KEY", "sk-agnes")
     meta = NovelMeta(novel_id="n1", title="t", model="agnes-2.5-flash",
-                     base_url="https://apihub.agnes-ai.cn/v1")
+                     base_url="https://api.agnes-ai.cn/v1")
     llm = OpenAICompatibleLLM.from_meta(meta)
     assert llm.api_key == "sk-agnes"
-    assert llm.base_url == "https://apihub.agnes-ai.cn/v1"
+    assert llm.base_url == "https://api.agnes-ai.cn/v1"
     assert llm.model == "agnes-2.5-flash"
 
 
