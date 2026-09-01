@@ -53,6 +53,24 @@ def test_api_facts_empty_initially(server) -> None:
         assert json.loads(resp.read()) == {"facts": []}
 
 
+def test_api_meta_reports_novel_and_offline_model(server) -> None:
+    base, _ = server
+    with urllib.request.urlopen(base + "/api/meta") as resp:
+        meta = json.loads(resp.read())
+    assert meta["title"] == "演示"
+    assert meta["genre"] == "未知"
+    assert meta["cloud"] is False
+    assert "mock" in meta["model"]
+
+
+def test_index_embeds_workflow_steps_and_shortcut_hint(server) -> None:
+    base, _ = server
+    with urllib.request.urlopen(base + "/") as resp:
+        html = resp.read().decode()
+    for marker in ("填章纲", "生成正文", "审读校验", "保存落盘", "Ctrl", "/api/meta"):
+        assert marker in html
+
+
 def test_api_write_returns_text_and_accepted(server) -> None:
     base, engine = server
     res = _post(base, "/api/write", {
