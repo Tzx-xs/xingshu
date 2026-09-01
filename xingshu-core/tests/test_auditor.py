@@ -37,9 +37,10 @@ def test_grade_major_caps_at_repair() -> None:
 
 
 def test_parse_report_extracts_score_and_issues() -> None:
-    score, issues = parse_report(_AUDIT_JSON)
+    score, issues, choices = parse_report(_AUDIT_JSON)
     assert score == 78
     assert issues == ["P1 信息密度不足", "L3 情感略浅"]
+    assert choices == []
 
 
 def test_parse_report_invalid_json_raises() -> None:

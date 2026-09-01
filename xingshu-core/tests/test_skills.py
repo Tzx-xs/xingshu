@@ -10,7 +10,13 @@ import yaml
 from xingshu.config import NovelMeta
 from xingshu.outlines import ChapterOutline, VolumeOutline
 from xingshu.prompts import PromptBuilder
-from xingshu.skills import Skill, SkillLibrary, load_skill
+from xingshu.skills import (
+    Skill,
+    SkillLibrary,
+    conflict_matrix,
+    load_skill,
+    validate_skill,
+)
 
 
 def _meta() -> NovelMeta:
@@ -111,3 +117,60 @@ def test_layer4_injected_when_skills_present() -> None:
     )
     assert "# 激活技能" in prompt
     assert "秘密指令：短句提速。" in prompt
+
+
+# ---------- 冲突矩阵（09 §6）与入库门禁（09 §5②③） ----------
+
+
+def _skill(sid: str, category: str = "pacing_control", rules: tuple = ()) -> Skill:
+    return Skill(id=sid, name=sid, category=category, prompt_directive="d",
+                 applicable_genres=("玄幻",), injection_points=("generation",),
+                 rules=rules)
+
+
+def test_conflict_matrix_marks_same_category_high() -> None:
+    matrix = conflict_matrix([_skill("s1"), _skill("s2")])
+    assert matrix["threshold"] == 0.7
+    assert len(matrix["pairs"]) == 1
+    pair = matrix["pairs"][0]
+    assert pair["conflict_score"] >= 0.7
+    assert pair["level"] == "high"
+
+
+def test_conflict_matrix_shared_rules_medium() -> None:
+    """不同分类但规则高度重叠 → medium（09 §6 方向性冲突）。"""
+    catalog = [
+        _skill("s1", category="pacing_control", rules=("句长分布",)),
+        _skill("s2", category="narrative_technique", rules=("句长分布",)),
+    ]
+    pair = conflict_matrix(catalog)["pairs"][0]
+    assert pair["level"] == "medium"
+    assert 0.4 <= pair["conflict_score"] < 0.7
+
+
+def test_conflict_matrix_structure() -> None:
+    matrix = conflict_matrix([_skill("s1"), _skill("s2")])
+    assert {"version", "updated_at", "threshold", "pairs"} <= set(matrix)
+    assert matrix["version"].startswith("1.")
+
+
+def test_validate_skill_accepts_library_ready_skill() -> None:
+    skill = _skill("s1", rules=("句长分布",))
+    assert validate_skill(skill) == []
+
+
+def test_validate_skill_rejects_bad_category() -> None:
+    problems = validate_skill(_skill("s1", category="not_a_category"))
+    assert any("category" in p for p in problems)
+
+
+def test_validate_skill_rejects_too_many_examples() -> None:
+    skill = Skill(id="s1", name="n", category="pacing_control", prompt_directive="d",
+                  examples=("a", "b", "c", "d"))  # 09 §2：examples ≤3
+    assert any("examples" in p for p in validate_skill(skill))
+
+
+def test_validate_skill_rejects_bad_injection_point() -> None:
+    skill = Skill(id="s1", name="n", category="pacing_control", prompt_directive="d",
+                  injection_points=("teleport",))
+    assert any("injection_points" in p for p in validate_skill(skill))

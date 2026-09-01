@@ -79,7 +79,7 @@ class _SeqAuditor:
     def evaluate(self, text, *, chapter_type="常规", blocker_count=0,
                  major_count=0, facts=()):
         raw = self._raws.pop(0)
-        score, issues = parse_report(raw)
+        score, issues, choices = parse_report(raw)
         return AuditReport(score=score, conclusion=grade(score, blocker_count=blocker_count,
                                                          major_count=major_count),
-                           issues=issues)
+                           issues=issues, creative_choices=choices)

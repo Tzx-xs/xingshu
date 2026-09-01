@@ -13,6 +13,67 @@ from pathlib import Path
 
 import yaml
 
+# 09 §3 技能 8 分类；09 §2 injection_points 可取值；examples 上限（09 §2）
+CATEGORIES = {
+    "narrative_technique", "style_template", "plot_device", "character_method",
+    "dialogue_technique", "pacing_control", "worldbuilding", "revision_method",
+}
+INJECTION_POINTS = {"planning", "generation", "audit", "revision"}
+MAX_EXAMPLES = 3
+
+
+def validate_skill(skill: Skill) -> list[str]:
+    """入库门禁的确定性校验（09 §5②③ 格式验证/质量门禁在确定性子集）。"""
+    problems: list[str] = []
+    if skill.category not in CATEGORIES:
+        problems.append(f"category 非法: {skill.category}（可选 {sorted(CATEGORIES)}）")
+    bad_points = [p for p in skill.injection_points if p not in INJECTION_POINTS]
+    if bad_points:
+        problems.append(f"injection_points 含非法值: {bad_points}")
+    if len(skill.examples) > MAX_EXAMPLES:
+        problems.append(f"examples 超过 {MAX_EXAMPLES} 个上限")
+    return problems
+
+
+def _conflict_pair(a: Skill, b: Skill) -> dict:
+    """09 §6 冲突度（确定性近似：同分类=方向冲突强；共享规则=语义重叠）。
+
+    对齐公式"方向性冲突率×0.6 + 语义向量距离×0.4"的确定性子集：
+    同分类视为方向冲突；rules 重叠视为语义重叠。
+    """
+    same_category = a.category == b.category
+    shared_rules = len(set(a.rules) & set(b.rules))
+    if same_category:
+        score = 0.8
+        reason = f"同分类 {a.category}：方向性冲突概率高"
+    elif shared_rules:
+        score = 0.5
+        reason = f"共享 {shared_rules} 条规则，语义重叠"
+    else:
+        score = 0.2
+        reason = "分类不同且无规则重叠"
+    level = "high" if score >= 0.7 else ("medium" if score >= 0.4 else "low")
+    return {
+        "skill_a": a.id, "skill_b": b.id,
+        "conflict_score": score, "level": level, "reason": reason,
+    }
+
+
+def conflict_matrix(skills: Sequence[Skill], *, threshold: float = 0.7) -> dict:
+    """技能库冲突矩阵：返回 medium 及以上的技能对（09 §6 JSON 结构）。"""
+    matrix = {
+        "version": "1.0",
+        "updated_at": "",
+        "threshold": threshold,
+        "pairs": [],
+    }
+    for i, a in enumerate(skills):
+        for b in skills[i + 1:]:
+            pair = _conflict_pair(a, b)
+            if pair["conflict_score"] >= threshold - 0.3:  # 收录 medium+ (≥0.4)
+                matrix["pairs"].append(pair)
+    return matrix
+
 
 @dataclass(frozen=True, slots=True)
 class Skill:

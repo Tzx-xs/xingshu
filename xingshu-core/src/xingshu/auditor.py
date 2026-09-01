@@ -27,6 +27,7 @@ class AuditReport:
     score: int
     conclusion: str
     issues: list[str] = field(default_factory=list)
+    creative_choices: list[str] = field(default_factory=list)  # 06 §3 作者意图声明转记
 
 
 def grade(score: int, *, blocker_count: int = 0, major_count: int = 0) -> str:
@@ -41,8 +42,8 @@ def grade(score: int, *, blocker_count: int = 0, major_count: int = 0) -> str:
     return "回炉重写"
 
 
-def parse_report(raw: str) -> tuple[int, list[str]]:
-    """解析审计模型返回的 JSON：{"score": int, "issues": [...]}。"""
+def parse_report(raw: str) -> tuple[int, list[str], list[str]]:
+    """解析审计模型返回的 JSON：{"score": int, "issues": [...], "creative_choices": [...]}。"""
     text = raw.strip()
     try:
         obj = json.loads(text)
@@ -54,13 +55,15 @@ def parse_report(raw: str) -> tuple[int, list[str]]:
     if not isinstance(obj, dict) or "score" not in obj:
         raise ValueError(f"审计 JSON 缺少 score 字段: {text[:120]}")
     issues = obj.get("issues") or []
-    return int(obj["score"]), [str(i) for i in issues]
+    choices = obj.get("creative_choices") or []
+    return int(obj["score"]), [str(i) for i in issues], [str(c) for c in choices]
 
 
 def build_audit_prompt(
     chapter_type: str,
     text: str,
     facts: Sequence[Fact],
+    declared_intents: Sequence[object] = (),
 ) -> str:
     lines = [
         "# 审计任务（Layer 5 — 由独立 audit_model 复核）",
@@ -71,11 +74,19 @@ def build_audit_prompt(
     ]
     for f in facts:
         lines.append(f"- {f.system}/{f.entity}: {f.attribute}={f.value} 来源「{f.source}」")
+    if declared_intents:
+        lines.append("")
+        lines.append("## 作者意图声明（06 §3）")
+        for i in declared_intents:
+            note = f"：{i.reason}" if i.reason else ""
+            lines.append(f"- {i.target} 系第{i.chapter}章有意为之的文学手法{note}")
+        lines.append("- 匹配以上声明的现象只可记入 creative_choices，不得判为 Blocker/Major。")
     lines += [
         "",
         f"## 复核指令（章节类型：{chapter_type}）",
         "重点检查：事实锁定(C1)、关系锁定(C2)、时间线一致(C6)、反AI味(P1-P8)。",
-        '请只输出严格 JSON：{"score": 整数0-100, "issues": ["维度: 问题", ...]}，不要输出任何其它内容。',
+        '请只输出严格 JSON：{"score": 整数0-100, "issues": ["维度: 问题", ...], '
+        '"creative_choices": ["维度: 创作选择", ...]}，不要输出任何其它内容。',
     ]
     return "\n".join(lines)
 
@@ -94,11 +105,13 @@ class LLMAuditor:
         blocker_count: int = 0,
         major_count: int = 0,
         facts: Sequence[Fact] = (),
+        declared_intents: Sequence[object] = (),
     ) -> AuditReport:
-        prompt = build_audit_prompt(chapter_type, text, facts)
-        score, issues = parse_report(self.llm.complete(prompt))
+        prompt = build_audit_prompt(chapter_type, text, facts, declared_intents)
+        score, issues, choices = parse_report(self.llm.complete(prompt))
         return AuditReport(
             score=score,
             conclusion=grade(score, blocker_count=blocker_count, major_count=major_count),
             issues=issues,
+            creative_choices=choices,
         )
