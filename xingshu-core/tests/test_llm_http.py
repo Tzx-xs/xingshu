@@ -114,8 +114,18 @@ def test_from_meta_reads_api_key_from_env(monkeypatch) -> None:
     assert llm.api_key == "secret"
 
 
+def test_from_meta_reads_agnes_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("AGNES_API_KEY", "sk-agnes")
+    meta = NovelMeta(novel_id="n1", title="t", model="agnes-2.5-flash",
+                     base_url="https://apihub.agnes-ai.cn/v1")
+    llm = OpenAICompatibleLLM.from_meta(meta)
+    assert llm.api_key == "sk-agnes"
+    assert llm.base_url == "https://apihub.agnes-ai.cn/v1"
+    assert llm.model == "agnes-2.5-flash"
+
+
 def test_from_meta_missing_api_key_raises(monkeypatch) -> None:
-    for key in ("LLM_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY"):
+    for key in ("LLM_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "AGNES_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     meta = NovelMeta(novel_id="n1", title="t", model="m")
     with pytest.raises(ValueError, match="API"):

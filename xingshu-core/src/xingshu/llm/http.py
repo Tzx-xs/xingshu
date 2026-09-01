@@ -16,7 +16,7 @@ from xingshu.config import NovelMeta
 from xingshu.llm.base import LLMError
 
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
-API_KEY_ENV_VARS = ("LLM_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY")
+API_KEY_ENV_VARS = ("LLM_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "AGNES_API_KEY")
 
 
 class OpenAICompatibleLLM:
@@ -55,8 +55,8 @@ class OpenAICompatibleLLM:
             if value:
                 return value
         raise ValueError(
-            "缺少 LLM API Key：请设置环境变量 LLM_API_KEY / "
-            "OPENAI_API_KEY / DEEPSEEK_API_KEY 之一"
+            "缺少 LLM API Key：请设置环境变量 "
+            "LLM_API_KEY / OPENAI_API_KEY / DEEPSEEK_API_KEY / AGNES_API_KEY 之一"
         )
 
     def complete(

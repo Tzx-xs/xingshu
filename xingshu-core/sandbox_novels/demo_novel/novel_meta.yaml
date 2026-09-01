@@ -21,6 +21,7 @@ budget:
   pipeline_ab_tokens_per_chapter: 4000
   context_slice_budget: 12000
 llm:
-  model: "mock"
-  audit_model: "mock"
+  model: "agnes-2.5-flash"
+  audit_model: "agnes-2.5-flash"
+  base_url: "https://apihub.agnes-ai.cn/v1"
   temperature: 0.8
